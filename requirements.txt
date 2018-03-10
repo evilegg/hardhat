@@ -1,3 +1,4 @@
 click
 colorama
+prometheus_client
 twisted

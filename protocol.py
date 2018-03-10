@@ -4,8 +4,12 @@ import os
 
 import click
 
+from prometheus_client.twisted import MetricsResource
+
 from twisted.internet import protocol
 from twisted.internet import reactor
+from twisted.web.server import Site
+from twisted.web.resource import Resource
 
 
 class ClaymoreProtocol(protocol.ProcessProtocol):
@@ -41,6 +45,11 @@ def main(executable, worker, timeout):
                              {'WORKER': worker})
         if timeout > 0.0:
             reactor.callLater(timeout, pp.transport.loseConnection)
+
+    root = Resource()
+    root.putChild(b'metrics', MetricsResource())
+    factory = Site(root)
+    reactor.listenTCP(10999, factory)
 
     reactor.callWhenRunning(spawn_and_terminate)
     reactor.run()
