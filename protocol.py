@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import os
+
 import click
 
 from twisted.internet import protocol
@@ -26,15 +28,23 @@ class ClaymoreProtocol(protocol.ProcessProtocol):
         click.echo("processEnded, status %s" % (reason.value.exitCode,))
         reactor.stop()
 
-
-if '__main__' == __name__:
-    pp = ClaymoreProtocol()
+@click.command()
+@click.option('--executable', help='mining application')
+@click.option('--worker', default='test', help='name for this worker')
+@click.option('--timeout', default=10.0)
+def main(executable, worker, timeout):
     def spawn_and_terminate():
+        pp = ClaymoreProtocol()
         reactor.spawnProcess(pp,
-            "eth+sia",
-            ["eth+sia"],
-            {"WORKER": 'test'})
-        reactor.callLater(10.0, pp.transport.loseConnection)
+                             executable,
+                             [os.path.basename(executable)],
+                             {'WORKER': worker})
+        if timeout > 0.0:
+            reactor.callLater(timeout, pp.transport.loseConnection)
 
     reactor.callWhenRunning(spawn_and_terminate)
     reactor.run()
+
+
+if '__main__' == __name__:
+    main()
