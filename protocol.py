@@ -4,6 +4,7 @@ import os
 
 import click
 
+from prometheus_client import ProcessCollector
 from prometheus_client.twisted import MetricsResource
 
 from twisted.internet import protocol
@@ -24,6 +25,10 @@ class ClaymoreProtocol(protocol.ProcessProtocol):
         for line in data.split('\n'):
             click.echo(prefix, nl=False)
             click.echo(line)
+
+    def connectionMade(self):
+        click.echo('PID=%s' % self.pid)
+        ProcessCollector(namespace='miner', pid=lambda: self.transport.pid)
 
     def processExited(self, reason):
         click.echo("processExited, status %s" % (reason.value.exitCode,))
